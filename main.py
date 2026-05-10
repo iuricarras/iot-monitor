@@ -1,5 +1,6 @@
 import os, subprocess
 import psutil
+ 
 
 def main():
     osname = os.name
@@ -15,6 +16,10 @@ def main():
 
     elif(osname == "nt"):
         print("WINDOWS :(")
+        cpu = psutil.cpu_percent()
+        print(f"CPU: {cpu}%")
+        temp = psutil.sensors_temperatures()
+        print(f"New Temp {temp}")
 
 if __name__ == "__main__":
     main()
