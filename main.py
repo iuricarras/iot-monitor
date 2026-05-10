@@ -1,6 +1,6 @@
 import os, subprocess
 import psutil
- 
+import WinTmp 
 
 def main():
     osname = os.name
@@ -18,7 +18,7 @@ def main():
         print("WINDOWS :(")
         cpu = psutil.cpu_percent()
         print(f"CPU: {cpu}%")
-        temp = psutil.sensors_temperatures()
+        temp = WinTmp.CPU_Temps()
         print(f"New Temp {temp}")
 
 if __name__ == "__main__":
