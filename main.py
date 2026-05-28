@@ -3,11 +3,19 @@ import os, subprocess
 import psutil
 import time
 from paho.mqtt import client as mqtt_client
+from paho.mqtt import subscribe as mqtt_subscribe
 
 broker = '127.0.0.1'
 port = 1883
-topic = "python/mqtt"
-client_id = f'python-mqtt-{random.randint(0, 1000)}'
+topic = None
+client_id = subprocess.check_output("hostname", shell=True).decode().strip()
+
+def default_topic(client, userdata, message):
+    global topic
+    response = message.payload.decode()
+    print(f"Received `{response}` from `{message.topic}` topic")
+    topic = response
+
 
 def connect_mqtt():
     def on_connect(client, userdata, flags, rc, properties=None):
@@ -34,7 +42,11 @@ def main():
     if(osname == "posix"):
         client = connect_mqtt()
         client.loop_start()
+        mqqt_subscribe.callback(default_topic, topic="default/gateway", qos=0)
         print("LINUX! :)")
+        while topic is None:
+            print("Waiting for topic...")
+            time.sleep(5)
         while True:
             err, msg = subprocess.getstatusoutput('cat /sys/class/thermal/thermal_zone0/temp')
             temp = int(msg) / 1000
@@ -50,13 +62,9 @@ def main():
                 print(f"Failed to send message to topic {topic}")
             time.sleep(5)
     elif(osname == "nt"):
-        print("WINDOWS :(")
-        import WinTmp 
-        cpu = psutil.cpu_percent()
-        print(f"CPU: {cpu}%")
-        temp = WinTmp.CPU_Temps()
-        print(f"New Temp {temp}")
-
+        print("WINDOWS! :(")
+        print("This script is only compatible with Linux systems. Exiting...")
+    
 if __name__ == "__main__":
     main()
 
