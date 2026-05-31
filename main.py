@@ -2,6 +2,7 @@ import random
 import os, subprocess
 import psutil
 import time
+import json
 from paho.mqtt import client as mqtt_client
 from paho.mqtt import subscribe as mqtt_subscribe
 
@@ -13,8 +14,11 @@ client_id = subprocess.check_output("hostname", shell=True).decode().strip()
 def default_topic(client, userdata, message):
     global topic
     response = message.payload.decode()
-    print(f"Received `{response}` from `{message.topic}` topic")
-    topic = response
+    responseJSON = json.loads(response)
+    if(responseJSON['hostname'] != client_id):
+        return
+    print(f"Received `{responseJSON['rack']}` from `{message.topic}` topic")
+    topic = responseJSON['rack']
 
 
 def connect_mqtt():
@@ -23,8 +27,10 @@ def connect_mqtt():
     # def on_connect(client, userdata, flags, rc, properties):
         if rc == 0:
             print("Connected to MQTT Broker!")
+            mqtt_subscribe.callback(default_topic,"default/gateway", qos=2)
         else:
             print("Failed to connect, return code %d\n", rc)
+        
     # Set Connecting Client ID
     #client = mqtt_client.Client(client_id)
     
@@ -33,7 +39,7 @@ def connect_mqtt():
     
     # client.username_pw_set(username, password)
     client.on_connect = on_connect
-    client.connect(broker, port)
+    client.connect_async(broker, port)
     return client
 
 
@@ -42,7 +48,6 @@ def main():
     if(osname == "posix"):
         client = connect_mqtt()
         client.loop_start()
-        mqqt_subscribe.callback(default_topic, topic="default/gateway", qos=0)
         print("LINUX! :)")
         while topic is None:
             print("Waiting for topic...")
@@ -53,7 +58,7 @@ def main():
             print(f"Temp: {temp}ºC")
             cpu = psutil.cpu_percent()
             print(f"CPU: {cpu}%")
-            msg = f"{{'cpu': {cpu}, 'temp': {temp}}}"
+            msg = f"{{'hostname': '{client_id}', 'cpu': {cpu}, 'temp': {temp}}}"
             result = client.publish(topic, msg)
             status = result[0]
             if status == 0:
