@@ -4,21 +4,11 @@ import psutil
 import time
 import json
 from paho.mqtt import client as mqtt_client
-from paho.mqtt import subscribe as mqtt_subscribe
 
 broker = '127.0.0.1'
 port = 1883
-topic = None
+topic = "vm/cpu"
 client_id = subprocess.check_output("hostname", shell=True).decode().strip()
-
-def default_topic(client, userdata, message):
-    global topic
-    response = message.payload.decode()
-    responseJSON = json.loads(response)
-    if(responseJSON['hostname'] != client_id):
-        return
-    print(f"Received `{responseJSON['rack']}` from `{message.topic}` topic")
-    topic = responseJSON['rack']
 
 
 def connect_mqtt():
@@ -27,7 +17,6 @@ def connect_mqtt():
     # def on_connect(client, userdata, flags, rc, properties):
         if rc == 0:
             print("Connected to MQTT Broker!")
-            mqtt_subscribe.callback(default_topic,"default/gateway", qos=2)
         else:
             print("Failed to connect, return code %d\n", rc)
         
@@ -49,9 +38,6 @@ def main():
         client = connect_mqtt()
         client.loop_start()
         print("LINUX! :)")
-        while topic is None:
-            print("Waiting for topic...")
-            time.sleep(5)
         while True:
             err, msg = subprocess.getstatusoutput('cat /sys/class/thermal/thermal_zone0/temp')
             temp = int(msg) / 1000
