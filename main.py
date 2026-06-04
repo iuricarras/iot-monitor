@@ -5,7 +5,7 @@ import time
 import json
 from paho.mqtt import client as mqtt_client
 
-broker = '127.0.0.1'
+broker = '192.168.33.102'
 port = 1883
 topic = "vm/cpu"
 client_id = subprocess.check_output("hostname", shell=True).decode().strip()
